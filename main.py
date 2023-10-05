@@ -18,19 +18,23 @@ def main():
 
     wiki_info = scrap_data(name)
     wiki_info, check = content_check(wiki_info)
-    if check: start_process(wiki_info, name)
+    if check: start_process(wiki_info, name, True)
     else:
         print("No results found")
         url = input("Enter the wikipedia filmography url: ")
         start_process(scrap_data(name, url), name)
 
 
-def start_process(wiki_info: dict, name):
+def start_process(wiki_info: dict, name: str, is_checked: bool=False):
     name = wiki_info.get("name")
     print(f"Personality identified is: {name}")
-    formatted = process_data.format_data(wiki_info)
-    if process_data.merge_to_database(formatted): print(f"{name}'s data added to the archive")
-    else: print(f"error occured while processing {name}'s data")
+    if not is_checked: wiki_info, is_checked = content_check(wiki_info)
+    if is_checked:
+        formatted = process_data.format_data(wiki_info)
+        if process_data.merge_to_database(formatted): print(f"{name}'s data added to the archive")
+        else: print(f"error occured while processing {name}'s data")
+    else:
+        print("sorry, unable to process the request")
 
 
 if __name__ == "__main__":

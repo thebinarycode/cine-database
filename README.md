@@ -19,13 +19,13 @@
 5. It appends the Actor details if the movie info already present in the database
 
 **Database:**
-| Column      | Description |
-| :----:      |:---         |
-| Year      | Release year of the movie       |
-| Film   | Film Name        |
-| Language   | Language of the film        |
-| Director   | Director of the film        |
-| Writer   | Writer of the film        |
-| Cast   | Cast acted in the film        |
-| Producer   | Producer of the film        |
+| Column      | Description                 |
+| :----:      |:---                         |
+| Year        | Release year of the movie   |
+| Film        | Film Name                   |
+| Language    | Language of the film        |
+| Director    | Director of the film        |
+| Writer      | Writer of the film          |
+| Cast        | Cast acted in the film      |
+| Producer    | Producer of the film        |
 * Each row is an unique movie entry

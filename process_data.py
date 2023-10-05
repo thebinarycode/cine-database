@@ -15,48 +15,49 @@ def format_data(wiki_data: dict) -> pandas.DataFrame:
         elif "director" in str(key).lower(): movie_df = dir_format(wiki_data, movie_df, key)
         else:
             df = wiki_data[key]
-            if "Role(s)" in df.columns: movie_df = actor_format(wiki_data, movie_df, key)
-            elif set(["Director", "Producer", "Writer"]).issubset(df.columns):movie_df = dir_format(wiki_data, movie_df, key)
+            if any([e in df.columns for e in ["Role", "Roles", "Role(s)"]]): movie_df = actor_format(wiki_data, movie_df, key)
+            # elif set(["Director", "Producer", "Writer"]).issubset(df.columns): movie_df = dir_format(wiki_data, movie_df, key)
+            elif any([e in df.columns for e in ["Director", "Producer", "Writer"]]): dir_format(wiki_data, movie_df, key)
             else: continue                          
     return movie_df
 
 
 def actor_format(wiki_data: pandas.DataFrame, movie_df: pandas.DataFrame, key: str):
     actor_df = wiki_data[key]
-    actor_df.rename(columns={'Title':'Film', 'Movie':'Film', 'Language(s)':'Language', 'Languages':'Language'}, inplace=True)
-    if movie_df.empty:
-        # if "Language" in actor_df.columns: movie_df["Language"] = actor_df["Language"]
-        selection_col = ["Year", "Film"]
-        if "Director" in actor_df.columns: selection_col.append("Director")
-        if "Language" in actor_df.columns: selection_col.append("Language")
-        movie_df[selection_col] = actor_df[selection_col].copy(deep=True)
-        movie_df["Cast"] = wiki_data["name"]
+    if actor_df.empty: return movie_df
     else:
-        movie_df = utils.append_data(movie_df, actor_df, wiki_data["name"], False)
-    return movie_df
+        actor_df.rename(columns={'Title':'Film', 'Movie':'Film', 'Language(s)':'Language', 'Languages':'Language'}, inplace=True)
+        if movie_df.empty:
+            # if "Language" in actor_df.columns: movie_df["Language"] = actor_df["Language"]
+            selection_col = ["Year", "Film"]
+            if "Director" in actor_df.columns: selection_col.append("Director")
+            if "Language" in actor_df.columns: selection_col.append("Language")
+            movie_df[selection_col] = actor_df[selection_col].copy(deep=True)
+            movie_df["Cast"] = wiki_data["name"]
+        else: movie_df = utils.append_data(movie_df, actor_df, wiki_data["name"], True)
+        return movie_df
 
 
 def dir_format(wiki_data: pandas.DataFrame, movie_df: pandas.DataFrame, key: str) -> pandas.DataFrame:
     director_df = wiki_data[key]
-    director_df.rename(columns={'Language(s)':'Language', 'Languages':'Language', 'Title': 'Film', 'Movie':'Film'}, inplace=True)
-    if movie_df.empty:
-        copy_col = ["Year", "Film"] if "Film" in director_df.columns else ["Year", "Title"]
-        movie_df[["Year", "Film", "Director"]] = director_df[copy_col].copy(deep=True)
-        movie_df["Language"] = director_df["Language"] if "Language" in director_df.columns else ""
-        movie_df["Director"] = director_df["Director"] if "Director" in director_df.columns else ""
-        movie_df["Producer"] = director_df["Producer"] if "Producer" in director_df.columns else ""
-        movie_df["Writer"] = director_df["Writer"] if "Writer" in director_df.columns else ""
+    if director_df.empty: return None
     else:
+        director_df.rename(columns={'Language(s)':'Language', 'Languages':'Language', 'Title': 'Film', 'Movie':'Film'}, inplace=True)
+
         if "Language" not in director_df.columns: director_df["Language"] = ""
         if "Director" not in director_df.columns: director_df["Director"] = ""
         if "Producer" not in director_df.columns: director_df["Producer"] = ""
         if "Writer" not in director_df.columns: director_df["Writer"] = ""
-        movie_df = utils.append_data(movie_df, director_df, wiki_data["name"], True)
 
-    movie_df.loc[(movie_df["Director"] == "yes") | (movie_df["Producer"] == "Yes"), "Director"] = wiki_data["name"]
-    movie_df.loc[(movie_df["Producer"] == "yes") | (movie_df["Producer"] == "Yes"), "Producer"] = wiki_data["name"]
-    movie_df.loc[(movie_df["Writer"] == "yes") | (movie_df["Writer"] == "Yes"), "Writer"] = wiki_data["name"]
-    return movie_df
+        if movie_df.empty:
+            selection_col = ["Year", "Film", "Language", "Director", "Producer", "Writer"]
+            movie_df[selection_col] = director_df[selection_col].copy(deep=True)
+        else: movie_df = utils.append_data(movie_df, director_df, wiki_data["name"], False)
+
+        movie_df.loc[(movie_df["Director"] == "yes") | (movie_df["Director"] == "Yes"), "Director"] = wiki_data["name"]
+        movie_df.loc[(movie_df["Producer"] == "yes") | (movie_df["Producer"] == "Yes"), "Producer"] = wiki_data["name"]
+        movie_df.loc[(movie_df["Writer"] == "yes") | (movie_df["Writer"] == "Yes"), "Writer"] = wiki_data["name"]
+        return movie_df
 
 
 def merge_to_database(movie_df: pandas.DataFrame) -> bool:
